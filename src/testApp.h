@@ -28,24 +28,27 @@ class testApp : public ofBaseApp{
     void guiEvent(ofxUIEventArgs &e);
     
     
-    //traer physics lib
-    
+    //traer physics lib stuff
     //different particle systems for each look
     ParticleSystem* escapeWaves;
     float escapeVelocity;
     float attractionLimit;
     
     ParticleSystem* rubberBandit;
+    float force;
     float distance;
+    
+    ParticleSystem* bounceGrid;
     
     
     //generic functions, different results for each system
-    void addParticle(ParticleSystem* s);
+    void addParticles(ParticleSystem* s);
     void drawParticles(ParticleSystem* s);
     void updateParticles(ParticleSystem* s);
     
     //handy vars
     ofVec3f center;
+    ofColor color;
     
     
     //math that oF doens't do
