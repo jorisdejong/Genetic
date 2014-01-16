@@ -13,12 +13,13 @@ void testApp::setup(){
     center = ofVec3f(ofGetWidth()/2.0, ofGetHeight()/2.0, 0.0);
     color = ofColor(255,96,0);
     
-    //escapeWaves setup
-    escapeWaves = new ParticleSystem(0.0,0.01);
-    escapeWaves->clear();
-    addParticles(escapeWaves);
-    escapeVelocity=0.0;
+    //escapeVelocity setup
+    escapeVelocity = new ParticleSystem(0.0,0.01);
+    escapeVelocity->clear();
+    addParticles(escapeVelocity);
+    escapeVel=0.0;
     attractionLimit = 0.1;
+    escapeVelocityOpacity = 1;
     
     //rubberBandit setup
     rubberBandit = new ParticleSystem(0.0,0.01);
@@ -28,6 +29,7 @@ void testApp::setup(){
     addParticles(rubberBandit);
     distance = 0.0;
     force = 0.0;
+    rubberBanditOpacity = 1;
     
     //bounceGrid setup
     bounceGrid = new ParticleSystem(0.0,0.01);
@@ -35,19 +37,27 @@ void testApp::setup(){
     Particle* bounceBoss = bounceGrid->makeParticle(50,center,0);
     bounceBoss->makeFixed();
     addParticles(bounceGrid);
+    tension = 0.2;
+    repulsion = -10.0;
+    bounceGridOpacity = 0;
 
     
     //gui
     gui = new ofxUICanvas(10,10,200,ofGetHeight()-20);
     gui->addFPS();
-    gui->addLabel("Escape Waves");
-    gui->addSlider("Escape Velocity", 0.0, 5.0, escapeVelocity);
+    gui->addSlider("Escape Velocity",0.0, 1.0, escapeVelocityOpacity);
+    gui->addSlider("Velocity", 0.0, 5.0, escapeVel);
     gui->addSlider("Gravity",0.0,1.0,attractionLimit);
     gui->addSpacer();
-    gui->addLabel("Rubber Bandit");
+    gui->addSlider("Rubber Bandit", 0.0, 1.0, rubberBanditOpacity);
     gui->addSlider("Force",-100.0,100.0,force);
     gui->addSlider("Distance",0.0,1000.0,distance);
-
+    gui->addSpacer();
+    gui->addSlider("Bounce Grid", 0.0, 1.0, bounceGridOpacity);
+    gui->add2DPad("Mouse", ofPoint(0,200), ofPoint(0,50), ofPoint(100,25), 200, 50);
+    gui->addSlider("Tension",0.0,2.0,tension);
+    gui->addSlider("Repulsion",0.0,-50.0,repulsion);
+    
     gui->autoSizeToFitWidgets();
     ofAddListener(gui->newGUIEvent, this, &testApp::guiEvent);
     
@@ -63,13 +73,15 @@ void testApp::setup(){
 //--------------------------------------------------------------
 void testApp::update(){
     
-    //updateParticles(escapeWaves);
-    //updateParticles(rubberBandit);
-    
-    //update the clock
-    //escapeWaves->tick();
-    //rubberBandit->tick();
-    bounceGrid->tick();
+    if(escapeVelocityOpacity!=0)
+        updateParticles(escapeVelocity);
+
+    if(rubberBanditOpacity!=0)
+        updateParticles(rubberBandit);
+
+    if(bounceGridOpacity!=0 )
+        updateParticles(bounceGrid);
+
 
 }
 
@@ -77,13 +89,14 @@ void testApp::update(){
 void testApp::draw(){
 
     
-    ofFill();
-
     //draw each system
-    ofSetColor(255,128);
-    //drawParticles(escapeWaves);
-    //drawParticles(rubberBandit);
-    drawParticles(bounceGrid);
+
+    if(escapeVelocityOpacity!=0)
+        drawParticles(escapeVelocity);
+    if(rubberBanditOpacity!=0)
+        drawParticles(rubberBandit);
+    if(bounceGridOpacity!=0)
+        drawParticles(bounceGrid);
 
 
     
@@ -113,7 +126,7 @@ void testApp::keyReleased(int key){
 
 //--------------------------------------------------------------
 void testApp::mouseMoved(int x, int y){
-    bounceGrid->getParticle(0)->position=ofVec3f(x,y,0.0);
+    
 
 }
 
@@ -152,11 +165,11 @@ void testApp::guiEvent(ofxUIEventArgs &e)
     string name = e.widget->getName();
     int kind = e.widget->getKind();
 
-    if(name =="Escape Velocity")
+    if(name =="Velocity")
     {
         ofxUISlider *slider = (ofxUISlider *) e.widget;
         float value = slider->getScaledValue();
-        escapeVelocity = value;        
+        escapeVel = value;        
     }
     else if (name=="Gravity")
     {
@@ -178,11 +191,58 @@ void testApp::guiEvent(ofxUIEventArgs &e)
         distance = value;
     }
     
+    else if (name=="Tension")
+    {
+        ofxUISlider *slider = (ofxUISlider *) e.widget;
+        float value = slider->getScaledValue();
+        tension = value;
+    }
+    else if (name=="Escape Velocity")
+    {
+        ofxUISlider *slider = (ofxUISlider *) e.widget;
+        float value = slider->getScaledValue();
+        escapeVelocityOpacity = value;
+    }
+    else if (name=="Rubber Bandit")
+    {
+        ofxUISlider *slider = (ofxUISlider *) e.widget;
+        float value = slider->getScaledValue();
+        rubberBanditOpacity = value;
+    }
+    else if (name=="Bounce Grid")
+    {
+        ofxUISlider *slider = (ofxUISlider *) e.widget;
+        float value = slider->getScaledValue();
+        bounceGridOpacity = value;
+    }
+    else if (name=="Escape Velocity")
+    {
+        ofxUISlider *slider = (ofxUISlider *) e.widget;
+        float value = slider->getScaledValue();
+        escapeVelocityOpacity = value;
+    }
+    
+    else if (name=="Mouse")
+    {
+        ofxUI2DPad *pad = (ofxUI2DPad *) e.widget;
+        ofVec3f value = pad->getPercentValue();
+        value.x*=ofGetWidth();
+        value.y*=ofGetHeight();
+        bounceGrid->getParticle(0)->position=ofVec3f(value);
+    }
+    
+    else if (name=="Repulsion")
+    {
+        ofxUISlider *slider = (ofxUISlider *) e.widget;
+        float value = slider->getScaledValue();
+        repulsion = value;
+    }
+    
 }
 
 void testApp::addParticles(ParticleSystem* s)
 {
-    if(s == escapeWaves)
+    if(s == escapeVelocity)
     {
         //create 10000 particles ready for recycling, using simple positioning, Traer is too much for this
         for(int i = 0; i < 10000; i++)
@@ -191,7 +251,7 @@ void testApp::addParticles(ParticleSystem* s)
             float angle = ofRandom(2.0*PI);
             ofVec3f pos = center+(ofVec3f(cos(angle),sin(angle),0.0)*5);
             float mass = ofRandom(1.0,2.0);
-            Particle* p = escapeWaves->makeParticle(mass, pos, mass);
+            Particle* p = escapeVelocity->makeParticle(mass, pos, mass*2);
             p->makeFixed();
         }
     }
@@ -238,13 +298,15 @@ void testApp::addParticles(ParticleSystem* s)
                 pos.y = distY * (y+1);
                 pos.z = 0.0;
                 Particle* p = bounceGrid->makeParticle(10, pos, 5);
+                if(pos==center || (x==0 && y ==0)  || (x==gridHorizontal-1 && y==0) || (x==0 && y==gridVertical-1) || (x==gridHorizontal-1 && y==gridVertical-1))
+                    p->makeFixed();
                 if(x>0)
-                    Spring* s = bounceGrid->makeSpring(p, bounceGrid->getParticle(x+y*gridHorizontal), 0.01, 0.1, distX);
+                    Spring* s = bounceGrid->makeSpring(p, bounceGrid->getParticle(x+y*gridHorizontal), 0.1, tension, distX);
                 if(y>0)
-                    Spring* s = bounceGrid->makeSpring(p, bounceGrid->getParticle(x+1+(y-1)*gridHorizontal), 0.01, 0.1, distY);
+                    Spring* s = bounceGrid->makeSpring(p, bounceGrid->getParticle(x+1+(y-1)*gridHorizontal), 0.1, tension, distY);
                 
                 //connect them to the boss, which is mouse controlled
-                Attraction* a = bounceGrid->makeAttraction(p, bounceGrid->getParticle(0), -10.0, 10);
+                Attraction* a = bounceGrid->makeAttraction(p, bounceGrid->getParticle(0), repulsion, 10);
             }
         }
         
@@ -259,7 +321,7 @@ void testApp::addParticles(ParticleSystem* s)
                 pos.z = 0.0;
                 Particle* pFixed = bounceGrid->makeParticle(10, pos, 5);
                 pFixed->makeFixed();
-                Spring* s = bounceGrid->makeSpring(pFixed, bounceGrid->getParticle(x+y*gridHorizontal+1), 0.001, 0.2, 0);
+                Spring* s = bounceGrid->makeSpring(pFixed, bounceGrid->getParticle(x+y*gridHorizontal+1), 0.01, 0.2, 0);
             
                 
             }
@@ -270,21 +332,23 @@ void testApp::addParticles(ParticleSystem* s)
 
 void testApp::updateParticles(ParticleSystem* s)
 {
-    if(s==escapeWaves)
+    
+    if(s==escapeVelocity)
     {
-        for(int i = 0; i < escapeWaves->numberOfParticles(); i++)
+        escapeVelocity->tick();
+        for(int i = 0; i < escapeVelocity->numberOfParticles(); i++)
         {
-            Particle* particle = escapeWaves->getParticle(i);
+            Particle* particle = escapeVelocity->getParticle(i);
             //if the particle are close to the center, shoot them out based on the current velocity value
             float dist = center.distance(particle->position);
             if(dist<10.0)
             {
-                particle->velocity=(particle->position-center).limit(1)*particle->mass*escapeVelocity;
+                particle->velocity=(particle->position-center).limit(1)*particle->mass*escapeVel;
                 //if they're stuck in the middle, shoot them out randomly
                 if(dist<=1.0)
                 {
                     float angle = ofRandom(2.0*PI);
-                    particle->velocity = (ofVec3f(cos(angle),sin(angle),0.0).limit(1)*particle->mass*escapeVelocity);
+                    particle->velocity = (ofVec3f(cos(angle),sin(angle),0.0).limit(1)*particle->mass*escapeVel);
                 }
             }
             
@@ -302,6 +366,7 @@ void testApp::updateParticles(ParticleSystem* s)
     
     if(s==rubberBandit)
     {
+        rubberBandit->tick();
         for(int i = 0; i < rubberBandit->numberOfAttractions(); i++)
             rubberBandit->getAttraction(i)->setStrength(force);
         
@@ -314,21 +379,49 @@ void testApp::updateParticles(ParticleSystem* s)
                 spring->setRestLength(distance/12.5);
         }
     }
+    
+    if(s==bounceGrid)
+    {
+        bounceGrid->tick();
+        for(int i = 0; i< bounceGrid->numberOfSprings(); i++)
+        {
+            Spring* spring = bounceGrid->getSpring(i);
+            if(!spring->getOneEnd()->fixed && !spring->getTheOtherEnd()->fixed)
+                spring->setDamping(tension);
+        }
+        
+        for(int i = 0; i < bounceGrid->numberOfAttractions(); i++)
+            bounceGrid->getAttraction(i)->setStrength(repulsion);
+    }
 
 }
 
 void testApp::drawParticles(ParticleSystem* s)
 {
+    ofFill();
+    
+    float opacity;
+    if(s==escapeVelocity)
+        opacity=escapeVelocityOpacity;
+    if(s==rubberBandit)
+        opacity=rubberBanditOpacity;
+    if(s==bounceGrid)
+        opacity=bounceGridOpacity;
     if(s!=bounceGrid)
     {
         for(int i = 0; i < s->numberOfParticles(); i++)
         {
+            if(fmod(i,2.0)==0.0)// && s != escapeVelocity)
+                ofSetColor(color,128*opacity);
+            else
+                ofSetColor(255,128*opacity);
                 Particle *part = s->getParticle(i);
                 ofCircle(part->position, part->radius);
         }
         
         for(int i = 0; i < s->numberOfSprings(); i++)
         {
+                ofSetColor(255,128*opacity);
                 Spring *spring = s->getSpring(i);
                 ofLine(spring->getOneEnd()->position, spring->getTheOtherEnd()->position);
         }
@@ -347,23 +440,30 @@ void testApp::drawParticles(ParticleSystem* s)
                 pos2 = rubberBandit->getParticle(1)->position;
             
             if(fmod(i,2.0)==0.0)
-                ofSetColor(color,128);
+                ofSetColor(color,128*opacity);
             else
-                ofSetColor(255,128);
+                ofSetColor(255,128*opacity);
             ofTriangle(pos1, pos2, pos3);
         }
     }
     
     if(s == bounceGrid)
     {
+
+        
         for(int i = 0; i <= (s->numberOfParticles()-1)/2.0; i++)
         {
+            if(fmod(i,2.0)==0.0)
+                ofSetColor(color,128*opacity);
+            else
+                ofSetColor(255,128*opacity);
             Particle *part = s->getParticle(i);
             ofCircle(part->position, part->radius);
         }
         
         for(int i = 0; i < s->numberOfSprings()-(s->numberOfParticles()-1)/2.0; i++)
         {
+            ofSetColor(255,128*opacity);
             Spring *spring = s->getSpring(i);
             ofLine(spring->getOneEnd()->position, spring->getTheOtherEnd()->position);
         }

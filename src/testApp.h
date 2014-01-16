@@ -30,15 +30,20 @@ class testApp : public ofBaseApp{
     
     //traer physics lib stuff
     //different particle systems for each look
-    ParticleSystem* escapeWaves;
-    float escapeVelocity;
+    ParticleSystem* escapeVelocity;
+    float escapeVel;
     float attractionLimit;
+    float escapeVelocityOpacity;
     
     ParticleSystem* rubberBandit;
     float force;
     float distance;
+    float rubberBanditOpacity;
     
     ParticleSystem* bounceGrid;
+    float tension;
+    float repulsion;
+    float bounceGridOpacity;
     
     
     //generic functions, different results for each system
