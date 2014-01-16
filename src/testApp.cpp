@@ -19,7 +19,7 @@ void testApp::setup(){
     addParticles(escapeVelocity);
     escapeVel=0.0;
     attractionLimit = 0.1;
-    escapeVelocityOpacity = 1.0;;
+    escapeVelocityOpacity = 0.0;;
     
     //rubberBandit setup
     rubberBandit = new ParticleSystem(0.0,0.01);
@@ -55,6 +55,12 @@ void testApp::setup(){
     }
     addParticles(coSign);
     coSignOpacity=0.0;
+    
+    //society setup
+    society = new ParticleSystem(0.0,0.01);
+    society->clear();
+    societyOpacity = 1.0;
+    addParticles(society);
 
     
     //gui
@@ -104,6 +110,8 @@ void testApp::update(){
     
     if(coSignOpacity!=0.0)
         updateParticles(coSign);
+    
+    updateParticles(society);
 
 
 }
@@ -122,6 +130,8 @@ void testApp::draw(){
         drawParticles(bounceGrid);
     if(coSignOpacity!=0.0)
         drawParticles(coSign);
+    
+    drawParticles(society);
 
 
     
@@ -409,6 +419,41 @@ void testApp::addParticles(ParticleSystem* s)
         }
     }
     
+    if(s == society)
+    {
+        //create 10000 particles ready for recycling
+        boss = society->makeParticle(50, center, 10);
+        boss->makeFixed();
+        for(int i = 0; i < 500; i++)
+        {
+            float angle = (2.0*PI)/500*i;
+            ofVec3f pos = center+(ofVec3f(cos(angle),sin(angle),0.0)*100);
+            float mass = ofRandom(1.0,2.0);
+            Particle* p = society->makeParticle(mass/10.0, pos, mass*2);
+            Attraction* a = society->makeAttraction(p, boss, 10.0, 150);
+            centerAttract.push_back(a);
+            
+        }
+        for(int i = 0; i < society->numberOfParticles(); i++)
+        {
+            Particle* p = society->getParticle(i);
+            if(!p->fixed)
+            {
+                for(int j = 0; j < society->numberOfParticles(); j++)
+                {
+                    Particle* p2 = society->getParticle(j);
+                    if(!p2->fixed)
+                    {
+                        Attraction* a = society->makeAttraction(p, p2, -5, 2);
+                        a->setMax(10);
+                    }
+                }
+
+            }
+        }
+        
+    }
+    
 }
 
 void testApp::updateParticles(ParticleSystem* s)
@@ -506,6 +551,19 @@ void testApp::updateParticles(ParticleSystem* s)
         }
         coSign->tick();
     }
+    
+    if(s==society)
+    {
+        society->tick();
+        for(int i =0; i<centerAttract.size(); i++)
+        {
+            if(fmod(i,2.0)==0.0)
+                force=-force;
+            centerAttract[i]->setStrength(force);
+        }
+        
+        boss->position.set(ofNoise(ofGetElapsedTimef()/2.0)*ofGetWidth(),ofNoise(ofGetElapsedTimef()/3.0)*ofGetHeight()*2.0-ofGetHeight()/2.0, 0.0);
+    }
 
 }
 
@@ -523,6 +581,8 @@ void testApp::drawParticles(ParticleSystem* s)
         opacity=bounceGridOpacity;
     else if(s==coSign)
         opacity=coSignOpacity;
+    else if(s==society)
+        opacity=societyOpacity;
 
     
     

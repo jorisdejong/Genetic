@@ -49,6 +49,12 @@ class testApp : public ofBaseApp{
     float coSignOpacity;
     int coSignBossCount;
     
+    ParticleSystem* society;
+    float societyOpacity;
+    vector <Attraction*> centerAttract;
+    Particle* boss;
+    
+    
     
     //generic functions, different results for each system
     void addParticles(ParticleSystem* s);

@@ -17,6 +17,7 @@ public:
 	bool on;
 	float distanceMin;
 	float distanceMinSquared;
+    float distanceMax;
 	
 	Attraction( Particle* a, Particle* b, float k, float distanceMin );
 
@@ -29,6 +30,8 @@ public:
 	void turnOn();
 
 	void setStrength( float k );
+    
+    void setMax (float m);
 
 	Particle* getOneEnd();
 

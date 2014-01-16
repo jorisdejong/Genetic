@@ -14,7 +14,10 @@ namespace traer { namespace physics {
 		on = true;
 		distanceMin = _distanceMin;
 		distanceMinSquared = distanceMin*distanceMin;
+        distanceMax = 0.0;
 	}
+    
+
 
 	float Attraction::getMinimumDistance()
 	{
@@ -41,6 +44,11 @@ namespace traer { namespace physics {
 	{
 		k = _k;
 	}
+    
+    void Attraction::setMax(float m)
+    {
+        distanceMax = m;
+    }
 
 	Particle* Attraction::getOneEnd()
 	{
@@ -54,7 +62,7 @@ namespace traer { namespace physics {
 
 	void Attraction::apply()
 	{
-		if ( on && ( !a->fixed || !b->fixed ) )
+		if ( on && ( !a->fixed || !b->fixed ))
 		{
             // ci::Vec3f a2b = a->position - b->position;
             ofVec3f a2b = a->position - b->position;
@@ -63,25 +71,29 @@ namespace traer { namespace physics {
 
 			if ( a2bDistanceSquared < distanceMinSquared )
 				a2bDistanceSquared = distanceMinSquared;
-
-			float force = k * a->mass * b->mass / a2bDistanceSquared;
-
-			// make unit vector
-			
-            //a2b /= sqrt(a2bDistanceSquared);
-			
-			// multiply by force 
-			
-			//a2b *= force;
             
-            a2b *= Q_rsqrt(a2bDistanceSquared) * force;
+            if (a2bDistanceSquared < distanceMax*distanceMax || distanceMax == 0.0)
+            {
+                float force = k * a->mass * b->mass / a2bDistanceSquared;
 
-			// apply
-			
-			if ( !a->fixed )
-				a->force -= a2b;
-			if ( !b->fixed )
-				b->force += a2b;
+                // make unit vector
+                
+                //a2b /= sqrt(a2bDistanceSquared);
+                
+                // multiply by force 
+                
+                //a2b *= force;
+                
+                
+                a2b *= Q_rsqrt(a2bDistanceSquared) * force;
+
+                // apply
+                
+                if ( !a->fixed )
+                    a->force -= a2b;
+                if ( !b->fixed )
+                    b->force += a2b;
+            }
 		}
 	}
 
