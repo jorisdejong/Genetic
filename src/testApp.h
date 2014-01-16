@@ -45,6 +45,10 @@ class testApp : public ofBaseApp{
     float repulsion;
     float bounceGridOpacity;
     
+    ParticleSystem* coSign;
+    float coSignOpacity;
+    int coSignBossCount;
+    
     
     //generic functions, different results for each system
     void addParticles(ParticleSystem* s);
