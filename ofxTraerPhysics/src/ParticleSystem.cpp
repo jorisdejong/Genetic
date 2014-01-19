@@ -151,34 +151,35 @@ namespace traer { namespace physics {
             Particle* p = particles[i];
             
             //clamping
-//            ofPoint pos = p->position;
-//            float r = p->radius;
-//            if(pos.x<x+r)
-//            {
-//                p->position.x = x+r;
-//                p->velocity.x *= -0.7;
-//                p->force.x = - p->force.x;
-//            }
-//            if(pos.x>x+w-r)
-//            {
-//                p->position.x = x+w-r;
-//                p->velocity.x *= -0.7;
-//                p->force.x = - p->force.x;
-//            }
-//            if(pos.y<y+r)
-//            {
-//                p->position.y = y+r;
-//                p->velocity.y *= -0.7;
-//                p->force.y = - p->force.y;
-//            }
-//            if(pos.y>y+h-r)
-//            {
-//                p->position.y = y+h-r ;
-//                p->velocity.y *= -0.7;
-//                p->force.y = - p->force.y;
-//
-//                
-//            }
+            ofPoint pos = p->position;
+            float r = p->radius;
+            if(x!=0&&y!=0&&w!=0&&h!=0)
+            {
+                if(pos.x<x+r)
+                {
+                    p->position.x = x+r;
+                    p->velocity.x *= -0.7;
+                 //   p->force.x = - p->force.x;
+                }
+                if(pos.x>x+w-r)
+                {
+                    p->position.x = x+w-r;
+                    p->velocity.x *= -0.7;
+                  //  p->force.x = - p->force.x;
+                }
+                if(pos.y<y+r)
+                {
+                    p->position.y = y+r;
+                    p->velocity.y *= -0.7;
+                 //   p->force.y = - p->force.y;
+                }
+                if(pos.y>y+h-r)
+                {
+                    p->position.y = y+h-r ;
+                    p->velocity.y *= -0.7;
+                  //  p->force.y = - p->force.y;
+                }
+            }
             p->force -= p->velocity * drag;
         }
         

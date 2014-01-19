@@ -16,6 +16,7 @@ void testApp::setup(){
     //escapeVelocity setup
     escapeVelocity = new ParticleSystem(0.0,0.01);
     escapeVelocity->clear();
+    escapeVelocity->setBounds(0, 0, ofGetWidth(), ofGetHeight());
     addParticles(escapeVelocity);
     escapeVel=0.0;
     attractionLimit = 0.1;
@@ -24,6 +25,7 @@ void testApp::setup(){
     //rubberBandit setup
     rubberBandit = new ParticleSystem(0.0,0.01);
     rubberBandit->clear();
+    //rubberBandit->setBounds(0, 0, ofGetWidth(), ofGetHeight());
     Particle* banditBoss = rubberBandit->makeParticle(50, center, 10);
     banditBoss->makeFixed();
     addParticles(rubberBandit);
@@ -34,6 +36,7 @@ void testApp::setup(){
     //bounceGrid setup
     bounceGrid = new ParticleSystem(0.0,0.01);
     bounceGrid->clear();
+    bounceGrid->setBounds(0, 0, ofGetWidth(), ofGetHeight());
     Particle* bounceBoss = bounceGrid->makeParticle(50,center,0);
     bounceBoss->makeFixed();
     addParticles(bounceGrid);
@@ -59,7 +62,8 @@ void testApp::setup(){
     //society setup
     society = new ParticleSystem(0.0,0.01);
     society->clear();
-    societyOpacity = 1.0;
+    society->setBounds(0, 0, ofGetWidth(), ofGetHeight());
+    societyOpacity = 0.0;
     addParticles(society);
 
     
@@ -111,7 +115,8 @@ void testApp::update(){
     if(coSignOpacity!=0.0)
         updateParticles(coSign);
     
-    updateParticles(society);
+    if(societyOpacity!=0.0)
+        updateParticles(society);
 
 
 }
@@ -130,12 +135,13 @@ void testApp::draw(){
         drawParticles(bounceGrid);
     if(coSignOpacity!=0.0)
         drawParticles(coSign);
-    
-    drawParticles(society);
+    if(societyOpacity)
+        drawParticles(society);
 
 
     
     //draw a center circle
+    ofFill();
     ofSetColor(color,255);
     ofCircle(center,10);
     ofNoFill();
@@ -421,14 +427,14 @@ void testApp::addParticles(ParticleSystem* s)
     
     if(s == society)
     {
-        //create 10000 particles ready for recycling
+        //create 500 particles ready for recycling
         boss = society->makeParticle(50, center, 10);
         boss->makeFixed();
         for(int i = 0; i < 500; i++)
         {
-            float angle = (2.0*PI)/500*i;
+            float angle = (2.0*PI)/100*i;
             ofVec3f pos = center+(ofVec3f(cos(angle),sin(angle),0.0)*100);
-            float mass = ofRandom(1.0,2.0);
+            float mass = ofRandom(1.0,4.0);
             Particle* p = society->makeParticle(mass/10.0, pos, mass*2);
             Attraction* a = society->makeAttraction(p, boss, 10.0, 150);
             centerAttract.push_back(a);
@@ -444,8 +450,10 @@ void testApp::addParticles(ParticleSystem* s)
                     Particle* p2 = society->getParticle(j);
                     if(!p2->fixed)
                     {
-                        Attraction* a = society->makeAttraction(p, p2, -5, 2);
-                        a->setMax(10);
+                        //add a slight negative force between each particle
+                        Attraction* a = society->makeAttraction(p, p2, -20, 2.0);
+                        a->setMax(60.0);
+                        forceField.push_back(a);
                     }
                 }
 
@@ -491,6 +499,7 @@ void testApp::updateParticles(ParticleSystem* s)
                 ofVec3f att = (particle->position-center).limit(attractionLimit);
                 particle->velocity-=att;
                 particle->velocity.limit(10);
+                particle->velocity*=1.0-attractionLimit/10.0;
                 particle->position+=particle->velocity;
                 
 
@@ -557,12 +566,42 @@ void testApp::updateParticles(ParticleSystem* s)
         society->tick();
         for(int i =0; i<centerAttract.size(); i++)
         {
-            if(fmod(i,2.0)==0.0)
-                force=-force;
+            //if(fmod(i,2.0)==0.0)
+              //  force=-force;
             centerAttract[i]->setStrength(force);
         }
         
-        boss->position.set(ofNoise(ofGetElapsedTimef()/2.0)*ofGetWidth(),ofNoise(ofGetElapsedTimef()/3.0)*ofGetHeight()*2.0-ofGetHeight()/2.0, 0.0);
+        //boss->position.set(ofNoise(ofGetElapsedTimef()/2.0)*ofGetWidth(),ofNoise(ofGetElapsedTimef()/3.0)*ofGetHeight()*2.0-ofGetHeight()/2.0, 0.0);
+        boss->position.set(ofGetMouseX(), ofGetMouseY(),0.0);
+        //
+//        for(int i = 0; i < society->numberOfParticles(); i++)
+//        {
+//            Particle* p = society->getParticle(i);
+//            if(!p->fixed)
+//            {
+//                if(p->position.y > ofGetHeight()-p->radius)
+//                {
+//                    p->position.y=ofGetHeight()-p->radius;
+//                    p->velocity.y*=-0.9;
+//                }
+//                if(p->position.y < 0+p->radius)
+//                {
+//                    p->position.y=0+p->radius;
+//                    p->velocity.y*=-0.9;
+//                }
+//                if(p->position.x > ofGetWidth()-p->radius)
+//                {
+//                    p->position.x=ofGetWidth()-p->radius;
+//                    p->velocity.x*=-0.9;
+//                }
+//                if(p->position.x < 0+p->radius)
+//                {
+//                    p->position.x=0+p->radius;
+//                    p->velocity.x*=-0.9;
+//                }
+//            }
+//            
+//        }
     }
 
 }
@@ -647,6 +686,18 @@ void testApp::drawParticles(ParticleSystem* s)
             ofLine(spring->getOneEnd()->position, spring->getTheOtherEnd()->position);
         }
         
+    }
+    
+    if(s== society)
+    {
+        for(int i = 0; i < forceField.size(); i++)
+        {
+            Attraction* a = forceField[i];//getAttraction(i);
+            Particle* p1 = a->getOneEnd();
+            Particle* p2 = a->getTheOtherEnd();
+           // if(p1->position.distance(p2->position)<20.0)
+             //   ofLine(p1->position, p2->position);
+        }
     }
 }
 

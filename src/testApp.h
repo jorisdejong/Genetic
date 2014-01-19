@@ -52,6 +52,7 @@ class testApp : public ofBaseApp{
     ParticleSystem* society;
     float societyOpacity;
     vector <Attraction*> centerAttract;
+    vector <Attraction*> forceField;
     Particle* boss;
     
     

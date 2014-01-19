@@ -74,6 +74,8 @@ namespace traer { namespace physics {
             
             if (a2bDistanceSquared < distanceMax*distanceMax || distanceMax == 0.0)
             {
+                //if(a2bDistanceSquared < distanceMin*distanceMin)
+                //    a->position-=a2b.limit(distanceMin);
                 float force = k * a->mass * b->mass / a2bDistanceSquared;
 
                 // make unit vector
