@@ -20,7 +20,7 @@ void testApp::setup(){
     addParticles(escapeVelocity);
     escapeVel=0.0;
     attractionLimit = 0.1;
-    escapeVelocityOpacity = 0.0;;
+    escapeVelocityOpacity = 1.0;;
     
     //rubberBandit setup
     rubberBandit = new ParticleSystem(0.0,0.01);
@@ -41,7 +41,7 @@ void testApp::setup(){
     bounceBoss->makeFixed();
     addParticles(bounceGrid);
     tension = 0.2;
-    repulsion = -10.0;
+    repulsion = 0.0;
     bounceGridOpacity = 0.0;
     
     //coSign setup
@@ -72,21 +72,23 @@ void testApp::setup(){
     gui->addFPS();
     gui->addSlider("Escape Velocity",0.0, 1.0, escapeVelocityOpacity);
     gui->addSlider("Velocity", 0.0, 5.0, escapeVel);
-    gui->addSlider("Gravity",0.0,1.0,attractionLimit);
-    gui->addSpacer();
+    gui->addSlider("Gravity",0.0,0.15,attractionLimit);
+    //gui->addSpacer();
     gui->addSlider("Rubber Bandit", 0.0, 1.0, rubberBanditOpacity);
     gui->addSlider("Force",-100.0,100.0,force);
     gui->addSlider("Distance",0.0,1000.0,distance);
-    gui->addSpacer();
+    //gui->addSpacer();
     gui->addSlider("Bounce Grid", 0.0, 1.0, bounceGridOpacity);
     gui->add2DPad("Mouse", ofPoint(0,200), ofPoint(0,50), ofPoint(100,25), 200, 50);
     gui->addSlider("Tension",0.0,2.0,tension);
     gui->addSlider("Repulsion",0.0,-50.0,repulsion);
+    gui->addSlider("Society", 0.0, 1.0, societyOpacity);
+   // gui->addSlider("Attraction", <#float _min#>, <#float _max#>, <#float _value#>)
     
     gui->setWidgetPosition(OFX_UI_WIDGET_POSITION_RIGHT);
-    gui->addSlider("k",0.0,1.0,0.0);
-    gui->addSlider("d",0.0,1.0,0.0);
-    gui->addSlider("rl",0.0,100.0,10.0);
+    //gui->addSlider("k",0.0,1.0,0.0);
+    //gui->addSlider("d",0.0,1.0,0.0);
+    //gui->addSlider("rl",0.0,100.0,10.0);
     
     gui->autoSizeToFitWidgets();
     ofAddListener(gui->newGUIEvent, this, &testApp::guiEvent);
@@ -265,13 +267,23 @@ void testApp::guiEvent(ofxUIEventArgs &e)
         escapeVelocityOpacity = value;
     }
     
+    else if (name=="Society")
+    {
+        ofxUISlider *slider = (ofxUISlider *) e.widget;
+        float value = slider->getScaledValue();
+        societyOpacity = value;
+    }
+    
     else if (name=="Mouse")
     {
         ofxUI2DPad *pad = (ofxUI2DPad *) e.widget;
         ofVec3f value = pad->getPercentValue();
         value.x*=ofGetWidth();
         value.y*=ofGetHeight();
-        bounceGrid->getParticle(0)->position=ofVec3f(value);
+        if(bounceGridOpacity>0.0)
+            bounceGrid->getParticle(0)->position=ofVec3f(value);
+        if(societyOpacity>0.0)
+            boss->position=ofVec3f(value);
     }
     
     else if (name=="Repulsion")
@@ -316,7 +328,7 @@ void testApp::addParticles(ParticleSystem* s)
     if(s == escapeVelocity)
     {
         //create 3000 particles ready for recycling, using simple positioning, Traer is too much for this
-        for(int i = 0; i < 10000; i++)
+        for(int i = 0; i < 1000; i++)
         {
             //place them in a circle
             float angle = ofRandom(2.0*PI);
@@ -324,15 +336,15 @@ void testApp::addParticles(ParticleSystem* s)
             float mass = ofRandom(1.0,2.0);
             Particle* p = escapeVelocity->makeParticle(mass, pos, mass*2);
             p->makeFixed();
-            float k = 0.05;
-            float d = 0.03;
-            float rl = 0.0;
+            float k = 0.01;
+            float d = 0.17;
+            float rl = 10.0;
             
-            //if(fmod(i,2.0)==0 && i > 0)
+            if(fmod(i,2.0)==0 && i > 0)
             {
                 Particle* p1 = escapeVelocity->makeParticle(mass, pos, mass*2);
-                //Spring* s1 = escapeVelocity->makeSpring(p, p1, k, d, rl);
-                p1->makeFixed();
+                Spring* s1 = escapeVelocity->makeSpring(p, p1, k, d, rl);
+                //p1->makeFixed();
                 //Spring* s3 = escapeVelocity->makeSpring(p1, p2, k, d, rl);
             }
         }
@@ -474,7 +486,7 @@ void testApp::updateParticles(ParticleSystem* s)
         for(int i = 0; i < escapeVelocity->numberOfParticles(); i++)
         {
             Particle* particle = escapeVelocity->getParticle(i);
-            if(particle->fixed)
+           // if(particle->fixed)
             {
                 //if the particle are close to the center, shoot them out based on the current velocity value
                 float dist = center.distance(particle->position);
@@ -505,8 +517,8 @@ void testApp::updateParticles(ParticleSystem* s)
 
             }
             //reel em back in if they go too far
-            if((particle->position-center).length()>center.length())
-                particle->position=center;
+            //if((particle->position-center).length()>center.length())
+              //  particle->position=center;
             
 
             
@@ -572,7 +584,7 @@ void testApp::updateParticles(ParticleSystem* s)
         }
         
         //boss->position.set(ofNoise(ofGetElapsedTimef()/2.0)*ofGetWidth(),ofNoise(ofGetElapsedTimef()/3.0)*ofGetHeight()*2.0-ofGetHeight()/2.0, 0.0);
-        boss->position.set(ofGetMouseX(), ofGetMouseY(),0.0);
+        //boss->position.set(ofGetMouseX(), ofGetMouseY(),0.0);
         //
 //        for(int i = 0; i < society->numberOfParticles(); i++)
 //        {
@@ -633,7 +645,9 @@ void testApp::drawParticles(ParticleSystem* s)
                 ofSetColor(color,128*opacity);
             else
                 ofSetColor(255,128*opacity);
-                Particle *part = s->getParticle(i);
+            
+            Particle *part = s->getParticle(i);
+            if(s!= society || !part->fixed)
                 ofCircle(part->position, part->radius);
         }
         
@@ -688,17 +702,17 @@ void testApp::drawParticles(ParticleSystem* s)
         
     }
     
-    if(s== society)
-    {
-        for(int i = 0; i < forceField.size(); i++)
-        {
-            Attraction* a = forceField[i];//getAttraction(i);
-            Particle* p1 = a->getOneEnd();
-            Particle* p2 = a->getTheOtherEnd();
-           // if(p1->position.distance(p2->position)<20.0)
-             //   ofLine(p1->position, p2->position);
-        }
-    }
+//    if(s== society)
+//    {
+//        for(int i = 0; i < forceField.size(); i++)
+//        {
+//            Attraction* a = forceField[i];//getAttraction(i);
+//            Particle* p1 = a->getOneEnd();
+//            Particle* p2 = a->getTheOtherEnd();
+//            if(p1->position.distance(p2->position)<10.0)
+//                ofLine(p1->position, p2->position);
+//        }
+//    }
 }
 
 float testApp::angleBetween(ofVec3f vec1, ofVec3f vec2)

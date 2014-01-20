@@ -153,7 +153,7 @@ namespace traer { namespace physics {
             //clamping
             ofPoint pos = p->position;
             float r = p->radius;
-            if(x!=0&&y!=0&&w!=0&&h!=0)
+            if(w!=0&&h!=0)
             {
                 if(pos.x<x+r)
                 {
