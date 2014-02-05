@@ -1,5 +1,62 @@
 #include "testApp.h"
 
+void testApp::reset()
+{
+    escapeVelocity->clear();
+    escapeVelocity->setBounds(0, 0, ofGetWidth(), ofGetHeight());
+    addParticles(escapeVelocity);
+    escapeVel=0.0;
+    sendFloatMessage(escapeVel, "/escape/velocity");
+    attractionLimit = 0.1;
+    sendFloatMessage(attractionLimit, "/escape/gravity");
+    escapeVelocityOpacity = 0.0;
+    sendFloatMessage(escapeVelocityOpacity, "/escape/opacity");
+    
+    rubberBandit->clear();
+    rubberBandit->setBounds(0, 0, ofGetWidth(), ofGetHeight());
+    Particle* banditBoss = rubberBandit->makeParticle(50, center, 10);
+    banditBoss->makeFixed();
+    addParticles(rubberBandit);
+    distance = 0.0;
+    sendFloatMessage(distance, "/rubber/distance");
+    force = 0.0;
+    sendFloatMessage(force, "/rubber/force");
+    rubberBanditOpacity = 0.0;
+    sendFloatMessage(rubberBanditOpacity, "/rubber/opacity");
+    
+    bounceGrid->clear();
+    bounceGrid->setBounds(0, 0, ofGetWidth(), ofGetHeight());
+    Particle* bounceBoss = bounceGrid->makeParticle(50,center,0);
+    bounceBoss->makeFixed();
+    addParticles(bounceGrid);
+    tension = 1.5;
+    sendFloatMessage(tension, "/grid/tension");
+    m.setAddress("/grid/xy");
+    m.addFloatArg(0.5);
+    m.addFloatArg(0.5);
+    oscOut.sendMessage(m);
+    m.clear();
+    repulsion = 0.0;
+    sendFloatMessage(repulsion, "/grid/repulse");
+    bounceGridOpacity = 0.0;
+    sendFloatMessage(bounceGridOpacity, "/grid/opacity");
+    
+    society->clear();
+    society->setBounds(0, 0, ofGetWidth(), ofGetHeight());
+    societyOpacity = 0.0;
+    sendFloatMessage(societyOpacity, "/society/opacity");
+    addParticles(society);
+    m.setAddress("/society/xy");
+    m.addFloatArg(0.5);
+    m.addFloatArg(0.5);
+    oscOut.sendMessage(m);
+    m.clear();
+    socForce = 0.0;
+    sendFloatMessage(socForce, "/society/force");
+    
+    resetTime = ofGetElapsedTimef();
+    
+}
 //--------------------------------------------------------------
 void testApp::setup(){
     ofSetVerticalSync(true);
@@ -9,40 +66,27 @@ void testApp::setup(){
     ofEnableSmoothing();
     ofBackground(0);
     
+    //osc
+    osc.setup(8000);
+    oscOut.setup("192.168.1.14", 7001);
+    
     //handy var init
     center = ofVec3f(ofGetWidth()/2.0, ofGetHeight()/2.0, 0.0);
     color = ofColor(255,96,0);
     
     //escapeVelocity setup
     escapeVelocity = new ParticleSystem(0.0,0.01);
-    escapeVelocity->clear();
-    escapeVelocity->setBounds(0, 0, ofGetWidth(), ofGetHeight());
-    addParticles(escapeVelocity);
-    escapeVel=0.0;
-    attractionLimit = 0.1;
-    escapeVelocityOpacity = 1.0;;
+    
+    
+
     
     //rubberBandit setup
     rubberBandit = new ParticleSystem(0.0,0.01);
-    rubberBandit->clear();
-    //rubberBandit->setBounds(0, 0, ofGetWidth(), ofGetHeight());
-    Particle* banditBoss = rubberBandit->makeParticle(50, center, 10);
-    banditBoss->makeFixed();
-    addParticles(rubberBandit);
-    distance = 0.0;
-    force = 0.0;
-    rubberBanditOpacity = 0.0;
+    
     
     //bounceGrid setup
     bounceGrid = new ParticleSystem(0.0,0.01);
-    bounceGrid->clear();
-    bounceGrid->setBounds(0, 0, ofGetWidth(), ofGetHeight());
-    Particle* bounceBoss = bounceGrid->makeParticle(50,center,0);
-    bounceBoss->makeFixed();
-    addParticles(bounceGrid);
-    tension = 0.2;
-    repulsion = 0.0;
-    bounceGridOpacity = 0.0;
+
     
     //coSign setup
     coSign = new ParticleSystem(0.0, 0.01);
@@ -61,29 +105,26 @@ void testApp::setup(){
     
     //society setup
     society = new ParticleSystem(0.0,0.01);
-    society->clear();
-    society->setBounds(0, 0, ofGetWidth(), ofGetHeight());
-    societyOpacity = 0.0;
-    addParticles(society);
 
+    reset();
     
     //gui
     gui = new ofxUICanvas(10,10,200,ofGetHeight()-20);
     gui->addFPS();
-    gui->addSlider("Escape Velocity",0.0, 1.0, escapeVelocityOpacity);
-    gui->addSlider("Velocity", 0.0, 5.0, escapeVel);
-    gui->addSlider("Gravity",0.0,0.15,attractionLimit);
-    //gui->addSpacer();
-    gui->addSlider("Rubber Bandit", 0.0, 1.0, rubberBanditOpacity);
-    gui->addSlider("Force",-100.0,100.0,force);
-    gui->addSlider("Distance",0.0,1000.0,distance);
-    //gui->addSpacer();
-    gui->addSlider("Bounce Grid", 0.0, 1.0, bounceGridOpacity);
-    gui->add2DPad("Mouse", ofPoint(0,200), ofPoint(0,50), ofPoint(100,25), 200, 50);
-    gui->addSlider("Tension",0.0,2.0,tension);
-    gui->addSlider("Repulsion",0.0,-50.0,repulsion);
-    gui->addSlider("Society", 0.0, 1.0, societyOpacity);
-   // gui->addSlider("Attraction", <#float _min#>, <#float _max#>, <#float _value#>)
+//    gui->addSlider("Escape Velocity",0.0, 1.0, escapeVelocityOpacity);
+//    gui->addSlider("Velocity", 0.0, 5.0, escapeVel);
+//    gui->addSlider("Gravity",0.0,0.15,attractionLimit);
+//    //gui->addSpacer();
+//    gui->addSlider("Rubber Bandit", 0.0, 1.0, rubberBanditOpacity);
+//    gui->addSlider("Force",-100.0,100.0,force);
+//    gui->addSlider("Distance",0.0,1000.0,distance);
+//    //gui->addSpacer();
+//    gui->addSlider("Bounce Grid", 0.0, 1.0, bounceGridOpacity);
+//    gui->add2DPad("Mouse", ofPoint(0,200), ofPoint(0,50), ofPoint(100,25), 200, 50);
+//    gui->addSlider("Tension",0.0,2.0,tension);
+//    gui->addSlider("Repulsion",0.0,-50.0,repulsion);
+//    gui->addSlider("Society", 0.0, 1.0, societyOpacity);
+
     
     gui->setWidgetPosition(OFX_UI_WIDGET_POSITION_RIGHT);
     //gui->addSlider("k",0.0,1.0,0.0);
@@ -94,6 +135,10 @@ void testApp::setup(){
     ofAddListener(gui->newGUIEvent, this, &testApp::guiEvent);
     
     
+    //syphon
+    server.setName("Genetic");
+    
+
     
 
 
@@ -117,8 +162,49 @@ void testApp::update(){
     if(coSignOpacity!=0.0)
         updateParticles(coSign);
     
-    if(societyOpacity!=0.0)
+    if(societyOpacity!=0.0 || ofGetElapsedTimef()-resetTime<5.0) //give society five seconds for positioning
         updateParticles(society);
+    
+    while(osc.hasWaitingMessages())
+    {
+        osc.getNextMessage(&m);
+        string add = m.getAddress();
+        //cout<<add<<endl;
+        if(add == "/escape/opacity")
+            escapeVelocityOpacity =  m.getArgAsFloat(0);
+        if(add == "/escape/velocity")
+            escapeVel =  m.getArgAsFloat(0);
+        if(add == "/escape/gravity")
+            attractionLimit =  m.getArgAsFloat(0);
+        if(add == "/rubber/opacity")
+            rubberBanditOpacity = m.getArgAsFloat(0);
+        if(add == "/rubber/force")
+            force =  m.getArgAsFloat(0);
+        if(add == "/rubber/distance")
+            distance =  m.getArgAsFloat(0);
+        if(add == "/grid/opacity")
+            bounceGridOpacity = m.getArgAsFloat(0);
+        if(add == "/grid/repulse")
+            repulsion = m.getArgAsFloat(0);
+        if(add == "/grid/tension")
+            tension = m.getArgAsFloat(0);
+        if(add == "/grid/xy")
+        {
+            ofVec3f value = ofVec3f(m.getArgAsFloat(1)*ofGetWidth(), m.getArgAsFloat(0)*ofGetHeight(), 0);
+            bounceGrid->getParticle(0)->position=value;
+        }
+        if(add == "/society/xy")
+        {
+            ofVec3f value = ofVec3f(m.getArgAsFloat(1)*ofGetWidth(), m.getArgAsFloat(0)*ofGetHeight(), 0);
+            boss->position=value;
+        }
+        if(add == "/society/force")
+            socForce = m.getArgAsFloat(0);
+        if(add == "/society/opacity")
+            societyOpacity = m.getArgAsFloat(0);
+        if(add == "/reset")
+            reset();
+    }
 
 
 }
@@ -149,6 +235,8 @@ void testApp::draw(){
     ofNoFill();
     ofSetColor(255,255);
     ofCircle(center,10);
+    
+    server.publishScreen();
     
 }
 
@@ -444,8 +532,8 @@ void testApp::addParticles(ParticleSystem* s)
         boss->makeFixed();
         for(int i = 0; i < 500; i++)
         {
-            float angle = (2.0*PI)/100*i;
-            ofVec3f pos = center+(ofVec3f(cos(angle),sin(angle),0.0)*100);
+            //float angle = (2.0*PI)/100*i;
+            ofVec3f pos = ofVec3f(ofRandomWidth(),ofRandomHeight(),0.0);
             float mass = ofRandom(1.0,4.0);
             Particle* p = society->makeParticle(mass/10.0, pos, mass*2);
             Attraction* a = society->makeAttraction(p, boss, 10.0, 150);
@@ -580,7 +668,7 @@ void testApp::updateParticles(ParticleSystem* s)
         {
             //if(fmod(i,2.0)==0.0)
               //  force=-force;
-            centerAttract[i]->setStrength(force);
+            centerAttract[i]->setStrength(socForce);
         }
         
         //boss->position.set(ofNoise(ofGetElapsedTimef()/2.0)*ofGetWidth(),ofNoise(ofGetElapsedTimef()/3.0)*ofGetHeight()*2.0-ofGetHeight()/2.0, 0.0);
@@ -720,5 +808,14 @@ float testApp::angleBetween(ofVec3f vec1, ofVec3f vec2)
     ofVec2f xAxis(1, 0);
     float angle = xAxis.angle(vec2 - vec1);
     return angle;
+}
+
+void testApp::sendFloatMessage(float v, string s)
+{
+    m.clear();
+    m.setAddress(s);
+    m.addFloatArg(v);
+    oscOut.sendMessage(m);
+    m.clear();
 }
 

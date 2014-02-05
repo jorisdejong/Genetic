@@ -3,6 +3,9 @@
 #include "ofMain.h"
 #include "ofxUI.h"
 #include "ofxTraerPhysics.h"
+#include "ofxSyphon.h"
+#include "ofxOsc.h"
+
 using namespace traer::physics;
 
 class testApp : public ofBaseApp{
@@ -21,6 +24,9 @@ class testApp : public ofBaseApp{
 		void windowResized(int w, int h);
 		void dragEvent(ofDragInfo dragInfo);
 		void gotMessage(ofMessage msg);
+    
+    void reset();
+    float resetTime;
     
     //gui shizz
     ofxUICanvas *gui;
@@ -53,6 +59,7 @@ class testApp : public ofBaseApp{
     float societyOpacity;
     vector <Attraction*> centerAttract;
     vector <Attraction*> forceField;
+    float socForce;
     Particle* boss;
     
     
@@ -69,6 +76,15 @@ class testApp : public ofBaseApp{
     
     //math that oF doens't do
     float angleBetween(ofVec3f vec1, ofVec3f vec2 );
+    
+    //syphon stuff
+    ofxSyphonServer server;
+    
+    //osc
+    ofxOscReceiver osc;
+    ofxOscMessage m;
+    ofxOscSender oscOut;
+    void sendFloatMessage(float v, string s);
     
     
     
