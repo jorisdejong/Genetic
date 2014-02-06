@@ -42,6 +42,8 @@ void testApp::reset()
     sendFloatMessage(bounceGridOpacity, "/grid/opacity");
     
     society->clear();
+    centerAttract.clear();
+    forceField.clear();
     society->setBounds(0, 0, ofGetWidth(), ofGetHeight());
     societyOpacity = 0.0;
     sendFloatMessage(societyOpacity, "/society/opacity");
@@ -53,6 +55,8 @@ void testApp::reset()
     m.clear();
     socForce = 0.0;
     sendFloatMessage(socForce, "/society/force");
+    freeWill = 0.0;
+    sendFloatMessage(freeWill, "/society/freewill");
     
     resetTime = ofGetElapsedTimef();
     
@@ -60,6 +64,7 @@ void testApp::reset()
 //--------------------------------------------------------------
 void testApp::setup(){
     ofSetVerticalSync(true);
+    ofSetFrameRate(30);
     ofEnableAlphaBlending();
     //ofEnableBlendMode(OF_BLENDMODE_ADD);
     
@@ -68,7 +73,12 @@ void testApp::setup(){
     
     //osc
     osc.setup(8000);
-    oscOut.setup("192.168.1.14", 7001);
+    //ask for IP address
+    string ip = ofSystemTextBoxDialog("iPad IP?");
+    if(ip!="")
+        oscOut.setup(ip, 7001);
+    else
+        oscOut.setup("127.0.0.1", 7001);
     
     //handy var init
     center = ofVec3f(ofGetWidth()/2.0, ofGetHeight()/2.0, 0.0);
@@ -202,6 +212,8 @@ void testApp::update(){
             socForce = m.getArgAsFloat(0);
         if(add == "/society/opacity")
             societyOpacity = m.getArgAsFloat(0);
+        if(add == "/society/freewill")
+            freeWill = m.getArgAsFloat(0);
         if(add == "/reset")
             reset();
     }
@@ -533,7 +545,7 @@ void testApp::addParticles(ParticleSystem* s)
         for(int i = 0; i < 500; i++)
         {
             //float angle = (2.0*PI)/100*i;
-            ofVec3f pos = ofVec3f(ofRandomWidth(),ofRandomHeight(),0.0);
+            ofVec3f pos = ofVec3f(ofRandomWidth()*0.98+0.01,ofRandomHeight()*0.98+0.01,0.0);
             float mass = ofRandom(1.0,4.0);
             Particle* p = society->makeParticle(mass/10.0, pos, mass*2);
             Attraction* a = society->makeAttraction(p, boss, 10.0, 150);
@@ -548,12 +560,14 @@ void testApp::addParticles(ParticleSystem* s)
                 for(int j = 0; j < society->numberOfParticles(); j++)
                 {
                     Particle* p2 = society->getParticle(j);
-                    if(!p2->fixed)
+                    if(!p2->fixed )//&& p->position.distance(p2->position) > 0.01)
                     {
                         //add a slight negative force between each particle
                         Attraction* a = society->makeAttraction(p, p2, -20, 2.0);
                         a->setMax(60.0);
                         forceField.push_back(a);
+
+                            
                     }
                 }
 
@@ -669,6 +683,19 @@ void testApp::updateParticles(ParticleSystem* s)
             //if(fmod(i,2.0)==0.0)
               //  force=-force;
             centerAttract[i]->setStrength(socForce);
+        }
+        for(int i =0; i<society->numberOfParticles(); i++)
+        {
+            if(!society->getParticle(i)->fixed)
+            {
+                int randomPart = floor(ofRandom(society->numberOfParticles()));
+                if(i >= randomPart - freeWill && i <= randomPart + freeWill)
+                    {
+                        ofVec3f rand = ofVec3f(ofRandom(-1,1),ofRandom(-1,1),0.0);
+                        society->getParticle(i)->velocity=rand * freeWill;
+                    }
+            }
+            
         }
         
         //boss->position.set(ofNoise(ofGetElapsedTimef()/2.0)*ofGetWidth(),ofNoise(ofGetElapsedTimef()/3.0)*ofGetHeight()*2.0-ofGetHeight()/2.0, 0.0);

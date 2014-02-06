@@ -61,6 +61,7 @@ class testApp : public ofBaseApp{
     vector <Attraction*> forceField;
     float socForce;
     Particle* boss;
+    float freeWill;
     
     
     
